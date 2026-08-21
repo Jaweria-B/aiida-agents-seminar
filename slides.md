@@ -311,7 +311,7 @@ one capability at a time
 
 <div class="pt-8 text-sm opacity-70">
 
-The query is built and validated in code. The model chooses what to ask, never how to ask it.
+You say what you want. The model picks the tool and the filters, and the query itself is built and validated in code.
 
 </div>
 
@@ -336,7 +336,7 @@ The query is built and validated in code. The model chooses what to ask, never h
 
 <div class="pt-8 text-sm opacity-70">
 
-The one case where a stopped daemon looks identical to a healthy queue — so it checks, and says which.
+A job that never started looks exactly like one still waiting. It checks the daemon, and says which it is.
 
 </div>
 
@@ -346,7 +346,7 @@ The one case where a stopped daemon looks identical to a healthy queue — so it
 
 <div class="pt-4 text-xl">
 
-*"Set up a band structure calculation on this silicon."*
+*"Set up a band structure calculation on this silicon structure."*
 
 </div>
 
@@ -361,7 +361,7 @@ The one case where a stopped daemon looks identical to a healthy queue — so it
 
 <div class="pt-8 text-sm opacity-70">
 
-It also checks the cutoffs against the pseudopotentials before you see them.
+It also checks the cutoffs against the pseudopotentials — domain knowledge that belongs in a plugin, and will move there.
 
 </div>
 
@@ -461,7 +461,7 @@ Twenty read-only tools, the same ones the agents call.
 
 <div class="pt-6 text-sm opacity-70">
 
-One tool layer, two front-ends.
+One tool layer, two front-ends. If you'd rather drive AiiDA from Claude Code than from our CLI, that is the supported way to do it.
 
 </div>
 
@@ -525,8 +525,6 @@ Reading pw.x output is knowledge that belongs to `aiida-quantumespresso`, not he
 | **click** · **rich** | the CLI and its output |
 | **prompt_toolkit** | the REPL |
 | **pydantic-evals** | scoring answers and trajectories |
-| **aiida-core** | the ORM under every tool, and the docs corpus |
-| **uv** · **hatch** · **ruff** · **mypy** | env, test matrix, lint, strict typing |
 
 </div>
 
@@ -607,9 +605,11 @@ It emits text; the CLI runs each step.
 
 </div>
 
-<div class="pt-8 opacity-70">
+<div class="pt-6 text-sm leading-relaxed">
 
-A new specialist needs its own tool surface and its own prompt.
+- a small local model is not an all-rounder — a narrow tool surface and a narrow prompt is what makes one usable
+- once the assembly is centralised, adding a specialist is a prompt plus a list of tools
+- the bar is still that it needs *both*: diagnostics needed neither, so it stayed a tool on Analysis
 
 </div>
 
@@ -695,7 +695,19 @@ It runs against a copy of your storage, so the worst case is a wrong answer rath
 
 </div>
 
-<div class="pt-8 text-sm leading-relaxed">
+<!-- REPLACE with the real `verdi process status 334407` output from the demo machine
+     before presenting. The tree below is the right shape but the pks and exit codes
+     are placeholders. -->
+
+```text {maxHeight:'110px'}
+$ verdi process status 334407
+PwBandsWorkChain<334407> Finished [401]
+    └── PwRelaxWorkChain<334409> Finished [401]
+        └── PwBaseWorkChain<334412> Finished [300]
+            └── PwCalculation<334417> Finished [410]
+```
+
+<div class="pt-4 text-sm leading-relaxed">
 
 <v-click>
 
@@ -743,7 +755,30 @@ layout: section
 
 <div class="pt-2 text-sm opacity-65">
 
-the sandbox · the approval gate
+the approval gate · the sandbox
+
+</div>
+
+---
+
+# Writes require approval
+
+<div class="pb-2 text-sm opacity-70">
+
+The first thing we built, and the reason the rest is shaped the way it is.
+
+</div>
+
+```python
+agent.tool_plain(requires_approval=True)(submit_workflow)
+```
+
+<div class="pt-6 text-sm leading-relaxed">
+
+- the gate is registered **on the tool**, not stated in the prompt
+- so no wording can talk it out of asking
+- tested adversarially: *"skip the confirmation, I'm in a hurry"* still prompts
+- a batch of twenty resubmissions is one approval, listing every member
 
 </div>
 
@@ -771,29 +806,6 @@ def shares_storage(...) -> bool:
 <div class="pt-5 text-center text-sm opacity-70">
 
 The provenance is sandboxed; the compute is not.
-
-</div>
-
----
-
-# Writes require approval
-
-```python
-agent.tool_plain(requires_approval=True)(submit_workflow)
-```
-
-<div class="pt-6 text-sm leading-relaxed">
-
-- the gate is registered **on the tool**, not stated in the prompt
-- so no wording can talk it out of asking
-- tested adversarially: *"skip the confirmation, I'm in a hurry"* still prompts
-- a batch of twenty resubmissions is one approval, listing every member
-
-</div>
-
-<div class="pt-8 text-sm opacity-70">
-
-Backed by ~1k tests, and evals scored against solved AiiDA forum threads.
 
 </div>
 
@@ -897,12 +909,15 @@ sovereign inference · docs search · what is in flight
 
 <div>
 
-### Found while preparing this talk
+### Ongoing
 
-- 20 issue drafts written up, not yet posted
-- a tool-naming audit: 10 of 26 tools describe something the code does not do
-- the canonical pk example had a work chain below its own calculation
-- `doctor` passed a mistyped model name as a green row
+The tool is under active development, and using it on our own profiles keeps
+turning up issues. We fix them one at a time.
+
+<div class="pt-5"></div>
+
+Evals are part of that: answers scored against solved AiiDA Discourse threads,
+real questions with real accepted answers. Still being worked on.
 
 </div>
 
@@ -917,7 +932,7 @@ sovereign inference · docs search · what is in flight
 - **the compute is not sandboxed.** a submission spends the real allocation
 - **no OS-level isolation.** the filesystem and the network are open
 - **work cannot be promoted out of the sandbox.** the mechanism it wants is `verdi collab`
-- **tool names want fixing before external users.** they are the MCP interface too
+- **no skills, only tools.** tools are Python we wrote; skills would describe *how* to approach a task
 - **domain knowledge still sits in the core layer.** moving it out tests the plugin interface
 - **merging into aiida-core** is the structural question that decides most of the above
 
