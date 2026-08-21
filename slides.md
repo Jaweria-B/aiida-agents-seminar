@@ -16,6 +16,21 @@ Jaweria Batool · GSoC 2026
 
 ---
 
+# What we set out to do
+
+<div class="pt-10 text-lg leading-loose">
+
+- Provide a natural-language interface to AiiDA
+- Answer questions about the user's own calculations and data
+- Explain why a calculation failed
+- Ground answers in the AiiDA documentation, through retrieval
+- Set up and run new computations from a description
+- Ask the user before anything is written
+
+</div>
+
+---
+
 # What we built
 
 <div class="text-sm pb-1">
