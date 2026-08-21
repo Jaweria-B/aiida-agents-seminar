@@ -445,21 +445,45 @@ aiida-agents rag search "restart a workchain"
 
 ```bash
 aiida-agents mcp    # streamable-http, :8000
-
 claude mcp add --transport http \
   aiida-agents http://127.0.0.1:8000/mcp
 ```
 
-<div class="pt-6 text-sm leading-relaxed">
+<div class="pt-3 text-sm">
 
-Twenty read-only tools, the same ones the agents call.
-
-- **no write tools**: a generic client has no approval gate
-- **no codegen**: its safety rests on a sandbox profile a client cannot verify
+Twenty read-only tools, the same ones the agents call:
 
 </div>
 
-<div class="pt-6 text-sm opacity-70">
+<div class="grid grid-cols-3 gap-x-8 pt-2 text-xs leading-snug">
+
+<div>
+
+**Processes**
+
+`list_processes` · `get_process_status` · `get_process_report` · `diagnose_process_failure` · `get_daemon_status` · `list_retrieved_files` · `get_retrieved_file`
+
+</div>
+
+<div>
+
+**Data**
+
+`query_nodes` · `get_node_inputs` · `get_node_outputs` · `search_structures` · `query_run_context`
+
+</div>
+
+<div>
+
+**Workflows**
+
+`list_workflows` · `describe_workflow` · `build_workflow_inputs` · `draft_workflow_inputs` · `check_input_ranges` · `build_resubmission_spec` · `list_codes` · `wait_for_process`
+
+</div>
+
+</div>
+
+<div class="pt-3 text-sm opacity-70">
 
 One tool layer, two front-ends. If you'd rather drive AiiDA from Claude Code than from our CLI, that is the supported way to do it.
 
@@ -689,7 +713,7 @@ It runs against a copy of your storage, so the worst case is a wrong answer rath
 
 # One question, three steps
 
-<div class="pt-4 text-xl">
+<div class="pt-2 text-xl">
 
 *"Find out why pk 334407 failed, then resubmit it with the fix."*
 
@@ -699,7 +723,7 @@ It runs against a copy of your storage, so the worst case is a wrong answer rath
      before presenting. The tree below is the right shape but the pks and exit codes
      are placeholders. -->
 
-```text {maxHeight:'110px'}
+```text {maxHeight:'100px'}
 $ verdi process status 334407
 PwBandsWorkChain<334407> Finished [401]
     └── PwRelaxWorkChain<334409> Finished [401]
@@ -707,7 +731,7 @@ PwBandsWorkChain<334407> Finished [401]
             └── PwCalculation<334417> Finished [410]
 ```
 
-<div class="pt-4 text-sm leading-relaxed">
+<div class="pt-2 text-sm leading-snug">
 
 <v-click>
 
@@ -717,7 +741,7 @@ PwBandsWorkChain<334407> Finished [401]
 
 <v-click>
 
-<div class="pt-4">
+<div class="pt-2">
 
 **2 · Analysis** — walks to the calculation that broke, reads the exit code, names the handler that already fired.
 
@@ -727,7 +751,7 @@ PwBandsWorkChain<334407> Finished [401]
 
 <v-click>
 
-<div class="pt-4">
+<div class="pt-2">
 
 **3 · Execution** — rebuilds the inputs with that finding, shows them resolved, and waits for you.
 
@@ -737,7 +761,7 @@ PwBandsWorkChain<334407> Finished [401]
 
 <v-click>
 
-<div class="pt-6 opacity-70">
+<div class="pt-3 opacity-70">
 
 If step 2 finds nothing, step 3 never runs. A resubmission built on a diagnosis that failed is worse than none.
 
