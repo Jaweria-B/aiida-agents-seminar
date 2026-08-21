@@ -1,496 +1,334 @@
 ---
 theme: seriph
 colorSchema: light
-title: Talking to AiiDA in plain language
+title: aiida-agents
 class: text-center
 transition: fade
 ---
 
-# Talking to AiiDA in plain language
+# `aiida-agents`
 
-`aiida-agents` — a natural-language, multi-agent interface
+A natural-language, multi-agent interface to AiiDA
 
 <div class="pt-8 opacity-70">
-Jaweria Batool · GSoC 2026 · Group seminar, 20 Aug 2026
+Jaweria Batool · GSoC 2026 · MSD group seminar, 21 Aug 2026
+</div>
+
+---
+
+# What we built
+
+<div class="text-sm pb-1">
+
+Everything agentic, in one package.
+
+</div>
+
+```text
+src/aiida_agents/
+├─ agents/          agent definitions and their prompts
+│  ├─ analysis/       reads the provenance graph and the docs
+│  ├─ codegen/        writes and runs Python in the sandbox
+│  ├─ execution/      submits workflows; database writes gated
+│  └─ planner/        picks which specialists run, and in what order
+├─ cli/             commands, the REPL, the approval prompt
+├─ mcp/             the MCP server and its read-only tool registrations
+├─ plugins/         the AgentPlugin protocol, and the provider loader
+├─ rag/             chunking, embedding, indexing, retrieval, citations
+├─ sandbox/         profile copying, the code runner, the static guard
+├─ tools/           the typed tool functions
+└─ _settings.py     the settings model, read from env or .env
+```
+
+---
+
+# What it can do
+
+<div class="text-sm opacity-70">
+
+Monospace names are the tool functions the model calls.
+
+</div>
+
+<div class="grid grid-cols-3 gap-x-6 gap-y-10 pt-4 text-xs">
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+### Explore the database
+
+- `query_nodes`: filters, AND/OR, joins, sorting, group scoping
+- `get_node_inputs` / `get_node_outputs`: walk provenance
+- `search_structures`, `query_run_context`
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+### Inspect a process
+
+- `get_process_status`, `get_process_report`
+- `list_retrieved_files`, `get_retrieved_file`
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+### Diagnose
+
+- `diagnose_process_failure`: exit code, failing sub-process, handlers fired
+- `get_daemon_status`: whether anything is draining the queue
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+### Look things up
+
+- `search_aiida_docs`, `search_aiida_code`
+- retrieved from the indexed docs, cited
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+### Build inputs
+
+- `list_workflows`, `list_codes`, `describe_workflow`
+- `build_workflow_inputs` (protocol builder)
+- `draft_workflow_inputs` (declared ports)
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+### Submit and run code
+
+- gated: `execute_workflow_spec`, `execute_workflow_batch`, `import_structure`
+- `run_aiida_code`, against the sandbox copy
+
+</div>
+
+</div>
+
+---
+layout: section
+---
+
+# Setup and usage
+
+<div class="pt-2 text-sm opacity-65">
+
+configuration · providers · commands
+
+</div>
+
+---
+
+# Configuration
+
+<div class="pb-3 text-sm">
+
+One prefix, `AIIDA_AGENTS_*`, read from the environment or a `.env`, validated at startup.
+
+</div>
+
+<div class="grid grid-cols-2 gap-8 text-sm">
+
+<div>
+
+| Group | Holds |
+| --- | --- |
+| `model` | provider, model, base URL, key, token budget |
+| `ollama` | endpoint for a local model |
+| `rag` | embedding backend and model, store path |
+| `sandbox` | sandbox profile, snippet timeout |
+
+</div>
+
+<div>
+
+| Group | Holds |
+| --- | --- |
+| `repl` | history depth, vi mode |
+| `server` | MCP port |
+| `logging` | level, log file |
+| `agent` | tool retries |
+
+</div>
+
+</div>
+
+<div class="pt-6 text-sm">
+
+- overridable per invocation: `--provider`, `--model`, `--profile`, `--agent`
+- a secret is reported as `set` or `unset`, never printed
+
+</div>
+
+---
+
+# Checking the setup
+
+```bash
+aiida-agents config show     # every value, and where it came from
+aiida-agents doctor          # profile, daemon, model, docs, RAG, sandbox
+aiida-agents doctor --warm   # ... and check the model actually serves
+aiida-agents rag build       # index the docs
+aiida-agents sandbox init    # make the disposable copy
+```
+
+<div class="pt-4 text-sm">
+
+- `doctor` names the fix for every failure it reports
+- a lookup that finds nothing raises, rather than substituting a default
+
+</div>
+
+---
+
+# Model providers
+
+<div class="grid grid-cols-2 gap-8 pt-4 text-sm">
+
+<div>
+
+| Provider | Reaches |
+| --- | --- |
+| `ollama` | a model on your own machine |
+| `openai` | GPT models |
+| `anthropic` | Claude models |
+| `openrouter` | one key, many providers |
+| `openai-compatible` | anything with a `base_url` |
+
+</div>
+
+<div>
+
+- Apertus by CSCS, a group vLLM server and DeepSeek all use the last row
+- the tool layer does not know the provider; swapping models changes one variable
+
+</div>
+
+</div>
+
+---
+
+# Using it
+
+```text
+aiida-agents [--provider] [--model] [--profile] [-a AGENT] COMMAND
+
+ask       answer a single question and exit (one-shot)
+chat      interactive REPL; the only mode that can approve a write
+config    inspect effective configuration
+doctor    profile, daemon, model, docs toolchain, RAG index, sandbox
+mcp       run the MCP server
+rag       manage the documentation index
+sandbox   build and verify the disposable copy
+```
+
+<div class="grid grid-cols-2 gap-8 pt-3 text-sm">
+
+<div>
+
+- `-a` pins one specialist; `auto` routes each request
+- REPL: persistent history, multiline, vi mode
+- `LOG_LEVEL=DEBUG` shows the tool calls behind each answer
+
+</div>
+
+<div>
+
+A write pauses the run and shows the resolved inputs:
+
+```text
+submit_workflow(code=InstalledCode(pk=1),
+                structure=StructureData(pk=4021, Si2))
+Approve? [y/N]
+```
+
+</div>
+
 </div>
 
 ---
 layout: center
 class: text-center
----
-
-# The question this starts from
-
-<div class="text-2xl pt-6">
-
-*"Why did pk 334599 fail?"*
-
-</div>
-
-<div class="pt-8 opacity-70 text-lg">
-
-Answering it today means: `verdi process report`, read the exit code,<br>
-find the sub-process that actually broke, look up what 501 means,<br>
-check which restart handlers already fired.
-
-</div>
-
-<div class="pt-6 opacity-70 text-lg">
-
-Five steps, three tools, and you have to know they exist.
-
-</div>
-
----
-
-# What it does
-
-<div class="grid grid-cols-2 gap-6 pt-4">
-
-<div>
-
-**Explore what you have**
-
-Count and rank nodes, follow provenance, search structures by formula, summarise what past runs used.
-
-**Explain a failure**
-
-Walk from a work chain's exit code *down to the calculation that broke*. Read the exit code's meaning from the process class. Name which restart handlers already fired.
-
-**Explain a job that never started**
-
-A stopped daemon has nothing *wrong* with it — every status tool says "waiting" forever. The agents check, and say which it is.
-
-</div>
-
-<div>
-
-**Set something up and run it**
-
-Discover installed workflows, inspect input schemas, build from a protocol builder, draft from declared ports.
-
-**Run in sequence, or in bulk**
-
-Feed one submission's output to the next; rebuild a past run, change one parameter, resubmit the set under a single approval.
-
-**Answer questions no tool expresses**
-
-Write the query, run it, report what it returned.
-
-</div>
-
-</div>
-
----
-layout: center
-class: text-center
+hide: true
 ---
 
 # Live demo
 
 <div class="text-lg opacity-70 pt-6">
 
-`aiida-agents ask "why did pk 334599 fail?"`
+`aiida-agents ask "why did pk 334407 fail?"`
 
 </div>
 
-<div class="pt-8 text-sm opacity-50">
-(fall back to the recorded run if the profile misbehaves)
+<div class="pt-8 text-sm opacity-65">
+
+diagnose a failure · deny an approval · try to talk it out of the gate<br>
+a two-step plan · codegen against the sandbox
+
 </div>
 
 ---
+layout: section
+---
 
-# How it is put together
+# Components
 
-```mermaid {scale: 0.72}
-graph LR
-    U[User] --> P[Planner]
-    P --> A[Analysis]
-    P --> E[Execution]
-    P --> C[Codegen]
-    A --> T[Typed tool layer]
-    E --> T
-    C --> T
-    T --> DB[(AiiDA profile)]
-    T --> R[(RAG index)]
-    E -.approval gate.-> U
-```
+<div class="pt-2 text-sm opacity-65">
 
-<div class="pt-4 text-sm opacity-70">
-
-The **planner** has no tools of its own — the step that decides *what to do* cannot touch the database.
-A plan of length one is just routing, so a simple question still costs one model call.
+RAG · MCP · plugins
 
 </div>
 
 ---
 
-# Why three specialists, not one
-
-<div class="grid grid-cols-3 gap-4 pt-6 text-sm">
-
-<div>
-
-### Analysis
-
-Read-only exploration of the provenance graph, plus documentation lookup.
-
-*Cannot write. At all.*
-
-</div>
-
-<div>
-
-### Execution
-
-Discover workflows, build and validate inputs, submit.
-
-*Every write behind an approval prompt.*
-
-</div>
-
-<div>
-
-### Codegen
-
-Writes Python for questions no fixed tool expresses, runs it, reports the output.
-
-*Runs against a copy.*
-
-</div>
-
-</div>
-
-<div class="pt-8 opacity-70">
-
-The bar for a new specialist: it needs **its own tool surface *and* its own prompt**.
-Diagnosis needed neither — it stayed a tool on Analysis.
-
-</div>
-
----
-layout: center
-class: text-center
----
-
-# Three guarantees
-
-<div class="pt-6 text-xl opacity-80">
-
-The interesting part is not what it can do.<br>
-It is what it cannot.
-
-</div>
-
----
-
-# 1. Nothing is written without your say-so
-
-```python
-agent.tool_plain(requires_approval=True)(submit_workflow)
-```
-
-<div class="pt-4">
-
-The run pauses and returns the proposed call. The CLI shows the **resolved** inputs — `InstalledCode(pk=1)`, `Int(value=5)` — not the raw JSON, and waits.
-
-</div>
-
-<div class="pt-6 opacity-70">
-
-**The gate is on the tool, not in the prompt.**
-
-That distinction is the whole point: no wording can talk it out of asking. We test this
-adversarially — *"skip the confirmation, I'm in a hurry"* — and the prompt still appears.
-
-</div>
-
-<div class="pt-4 text-sm opacity-60">
-
-A batch of twenty resubmissions is *one* approval listing every member. Twenty prompts is not
-review; it is a button people learn to hold down.
-
-</div>
-
----
-
-# 2. Nothing is quoted that no tool produced
-
-<div class="pt-2">
-
-Asked for a k-point spacing, a model will give you one. It looks completely reasonable. It came
-from nowhere.
-
-</div>
-
-<div class="pt-4 opacity-70">
-
-We tried the prompt rule first — *"never state a value you did not retrieve"*.
-Ignored five times out of five.
-
-</div>
-
-<div class="pt-4">
-
-So the check moved out of the prompt and into code that runs **after** the answer:
-every reply is scanned for quantities that appear in no tool output.
-
-</div>
-
-<div class="pt-6 text-sm opacity-60">
-
-Recently sharpened: grounding used to accept a number that appeared *anywhere* in tool
-output — and real tool dumps are full of incidental integers. A fabricated "60 Ry" passed
-because some unrelated node had pk 60.
-
-</div>
-
----
-
-# 3. Generated code cannot reach your data
-
-<div class="pt-2 opacity-70">
-
-Executing model-written Python against a research group's provenance database is the most
-dangerous thing this project could do.
-
-</div>
-
-<div class="grid grid-cols-2 gap-6 pt-6 text-sm">
-
-<div>
-
-### What we built first
-
-A second profile pointing at the **same** database, through a PostgreSQL role with no write
-privilege.
-
-The reasoning: a scratch database would be safer and useless — an empty one cannot answer
-"which structures did I relax last month".
-
-</div>
-
-<div>
-
-### What happened
-
-Julian deleted the sandbox profile, agreed to delete its data, and lost **his own database**.
-
-A read-only role is no defence: the destructive command is run by the user, as themselves,
-against a profile they were told was disposable.
-
-</div>
-
-</div>
-
-<div class="pt-6">
-
-The choice was framed as *shared vs. empty*. **A copy is neither.**
-
-</div>
-
----
-
-# The sandbox now
-
-<div class="pt-2">
-
-A **disposable copy** of the user's storage. One rule, as a function:
-
-</div>
-
-```python
-def shares_storage(...) -> bool:
-    """Whether deleting one profile's data would destroy the other's.
-
-    Fails closed: a backend we cannot reason about counts as sharing.
-    """
-```
-
-<div class="pt-4 opacity-70">
-
-`init` refuses to register a sharing sandbox · `check` fails on one · `teardown` refuses to
-delete one · `doctor` reports it — all through **one** implementation.
-
-</div>
-
-<div class="pt-6 text-sm opacity-60">
-
-Layers above it are *not* containment and are documented as such: the static AST guard is a
-pre-check (dogfooding found a one-line bypass), the subprocess gets a scrubbed environment —
-it used to inherit every API key you had exported — plus rlimits and its own process group.
-
-**Still open:** the copy protects the database, not the filesystem or the network. OS-level
-isolation (bwrap) is the next step, and is written down as a known gap rather than implied.
-
-</div>
-
----
-layout: center
-class: text-center
----
-
-# What we used, and for what
-
----
-
-# The stack
-
-<div class="grid grid-cols-2 gap-x-8 gap-y-3 pt-4 text-sm">
-
-<div><b>pydantic-ai</b></div>
-<div>Agent loop, typed tools, structured output. <code>requires_approval</code> / <code>DeferredToolRequests</code> give us the HITL gate as a primitive rather than a hand-rolled path.</div>
-
-<div><b>fastmcp</b></div>
-<div>Serves the read-only tools over MCP. Same tool layer, second front-end.</div>
-
-<div><b>ChromaDB + Ollama embeddings</b></div>
-<div>Local vector store; <code>mxbai-embed-large</code>, with a sentence-transformers fallback so CI and offline work.</div>
-
-<div><b>pydantic-settings</b></div>
-<div>Every setting from env or <code>.env</code>, with <code>config show</code> reporting where each value came from.</div>
-
-<div><b>click / rich-click / rich</b></div>
-<div>CLI, help, Markdown rendering, spinners.</div>
-
-<div><b>prompt_toolkit</b></div>
-<div>REPL: persistent history, multiline, vi mode.</div>
-
-<div><b>pydantic-evals</b></div>
-<div>Scoring answers against real forum threads and against grounding rules.</div>
-
-<div><b>uv · hatch · mypy --strict · ruff</b></div>
-<div>Locked dev env, CI across Python 3.10–3.14, strict typing from commit one.</div>
-
-</div>
-
----
-
-# Two front-ends, one tool layer
-
-<div class="grid grid-cols-2 gap-6 pt-6">
-
-<div>
-
-### CLI
-
-Where the local/sovereign models live (Ollama, Apertus), and where the **approval gate** lives.
+# RAG over the AiiDA docs
 
 ```bash
-aiida-agents ask "..."
-aiida-agents chat
+aiida-agents rag build
+aiida-agents rag search "restart a workchain"
 ```
 
-</div>
+<div class="pt-6 text-sm leading-relaxed">
 
-<div>
-
-### MCP
-
-`aiida-agents mcp` serves the *read* tools to any MCP client.
-
-**Write tools are deliberately absent.** A generic client has no approval gate, so submissions,
-imports and deletes stay in the CLI.
-
-</div>
-
-</div>
-
-<div class="pt-8 opacity-70">
-
-So "why not just use Claude Code with an AiiDA plugin?" — you can, over MCP, and it reuses the
-same tools. The CLI is not a competitor to that; it is where local models and gated writes live.
+- ChromaDB, `mxbai-embed-large` via Ollama, sentence-transformers fallback for CI
+- collections keyed by docs version, corpus format and embedder
+- so a query can never hit an index built by a different one
+- plugins ship their own corpora, keyed the same way
 
 </div>
 
 ---
 
-# Configuration: what we expose, and why
+# MCP server
 
-<div class="pt-4 text-sm">
+```bash
+aiida-agents mcp    # streamable-http, :8000
 
-Everything is `AIIDA_AGENTS_*`, from env or `.env`, validated at startup.
+claude mcp add --transport http \
+  aiida-agents http://127.0.0.1:8000/mcp
+```
 
-</div>
+<div class="pt-6 text-sm leading-relaxed">
 
-<div class="grid grid-cols-2 gap-6 pt-4 text-sm">
+20 read-only tools, the same ones the agents call.
 
-<div>
-
-**Provider and model** — cloud or local, switchable per invocation.
-
-**Context length and max tokens** — validated *against each other*, so a budget that cannot fit its own window fails fast rather than truncating mid-run.
-
-**Sandbox profile and timeout** — the safety boundary is a named setting, never a resolved default.
-
-</div>
-
-<div>
-
-**The rule we follow:** fail loud, not open.
-
-A lookup that finds nothing must say so. Silently substituting a plausible default — a store
-path, an embedding model, a workflow type — produces a system that *looks* like it is working
-while doing something else.
-
-That is far harder to notice than an error.
-
-</div>
-
-</div>
-
-<div class="pt-6 opacity-70 text-sm">
-
-`aiida-agents doctor` reports every subsystem and, for each failure, the command that fixes it.
+- no write tools: a generic client has no approval gate
+- no codegen: its safety rests on a verified sandbox profile, which a client cannot check
 
 </div>
 
 ---
 
-# How we know it works
+# Extending it
 
-<div class="grid grid-cols-2 gap-6 pt-4">
+<div class="pb-2 text-sm">
 
-<div>
-
-### Deterministic suite
-
-1066 tests. Strict typing, 3.10–3.14 in CI.
-
-Convention: after writing a test for a fix, **revert the fix and confirm the test fails**.
-Several tests here were written against real transcripts and still missed the bug until this
-was done.
-
-</div>
-
-<div>
-
-### Eval tier (opt-in, real model)
-
-Scores answers against **solved AiiDA Discourse threads** — real questions, real accepted
-answers.
-
-And asserts on *what the agent did*, not what it said: did it consult the docs, reach the
-diagnosis tool, route to the right specialist.
-
-</div>
-
-</div>
-
-<div class="pt-6 text-sm opacity-60">
-
-Interesting finding: most forum questions are infrastructure, not data — 28 out of 54 were
-out of scope for these agents entirely. One rubric would have measured the wrong thing.
-
-</div>
-
----
-
-# Extending it without depending on it
-
-<div class="pt-2">
-
-A plugin contributes through **one entry point**. This package never imports yours.
+Plugins are found through an entry point, so `aiida-agents` never imports or depends on yours.
 
 </div>
 
@@ -499,39 +337,414 @@ A plugin contributes through **one entry point**. This package never imports you
 quantumespresso = "my_plugin.agents:PROVIDER"
 ```
 
-<div class="grid grid-cols-3 gap-4 pt-6 text-sm">
+<div class="grid grid-cols-3 gap-6 pt-6 text-sm">
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+**`tools()`**
+
+Your domain tools.
+
+`writes=True` registers it behind the approval gate.
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+**`rag_corpora()`**
+
+Your docs, version-keyed, cited with a link.
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-3">
+
+**`prompt_fragment()`**
+
+Your conventions and units.
+
+The core prompt wins on conflict.
+
+</div>
+
+</div>
+
+<div class="pt-8 opacity-70 text-sm">
+
+Parsing pw.x output belongs to `aiida-quantumespresso`.
+
+</div>
+
+---
+
+# The stack
+
+<div class="pt-4 text-sm">
+
+| | |
+| --- | --- |
+| **pydantic-ai** | agent loop, typed tools, and the approval gate as a primitive |
+| **fastmcp** | the MCP server |
+| **ChromaDB** | the vector store |
+| **Ollama** | local models, and `mxbai-embed-large` for embeddings |
+| **pydantic-settings** | every setting, and where its value came from |
+| **click** · **rich** | the CLI and its output |
+| **prompt_toolkit** | the REPL |
+| **pydantic-evals** | scoring answers and trajectories |
+| **aiida-core** | the ORM under every tool, and the docs corpus |
+| **uv** · **hatch** · **ruff** · **mypy** | env, test matrix, lint, strict typing |
+
+</div>
+
+---
+layout: section
+---
+
+# Architecture
+
+<div class="pt-2 text-sm opacity-65">
+
+request path · what the model decides · specialists
+
+</div>
+
+---
+
+# How a request travels
+
+```mermaid {scale: 0.62}
+flowchart LR
+    User([user]) --> CLI
+
+    CLI -->|plan| Planner[planner<br/>no tools]
+    Planner -.->|steps, as text| CLI
+
+    CLI --> Analysis[analysis<br/>read-only]
+    CLI --> Execution[execution<br/>gated writes]
+    CLI --> Codegen[codegen<br/>runs Python]
+
+    Analysis --> Tools[typed tools]
+    Analysis --> RAG[RAG retrieval]
+    Execution --> HITL[approval gate]
+    HITL --> Tools
+    Codegen --> Sandbox[(sandbox copy)]
+    RAG --> Store[(vector store)]
+    Tools --> Profile[(AiiDA profile)]
+
+    classDef model fill:#e8f0f4,stroke:#5d8392,stroke-width:2px
+    class Planner,Analysis,Execution,Codegen model
+```
+
+<div class="pt-2 text-sm opacity-70">
+
+Shaded nodes are the model. Everything else is ordinary code.<br>
+The planner decides which specialists run, but never invokes one.<br>
+It emits text; the CLI runs each step.
+
+</div>
+
+---
+
+# Where the decisions are made
+
+<div class="pt-2 text-sm">
+
+| Concern | Decided by | Why |
+| --- | --- | --- |
+| Which specialist runs, and in what order | **Model** | An intent problem. No reliable rule exists. |
+| Which tool to call, with what arguments | **Model** | Same. |
+| Whether a write needs approval | **Code** | A prompt is not enforceable; a tool boundary is. |
+| Input validation, node resolution | **Code** | Deterministic and testable. |
+| Whether an answer's numbers are supported | **Code** | Checked after the run, independently of the model. |
+
+</div>
+
+---
+
+# Three specialists
+
+<div class="pt-2 text-sm">
+
+| | Tool surface | Can write? | Loop |
+| --- | --- | --- | --- |
+| **Analysis** | nodes, provenance, reports, retrieved files, diagnostics, daemon, docs | no such tool | look it up, explain it |
+| **Execution** | discover, inspect, build, draft, check, submit, wait, resubmit | 3 tools, all gated | build, show, ask, submit |
+| **Codegen** | write Python, run it, read the output | sandbox copy only | write, run, read the traceback |
+
+</div>
+
+<div class="pt-8 opacity-70">
+
+A new specialist needs its own tool surface and its own prompt.
+
+</div>
+
+---
+layout: section
+---
+
+# Safety
+
+<div class="pt-2 text-sm opacity-65">
+
+sandbox · approval gate · grounding check
+
+</div>
+
+---
+
+# Generated code runs against a copy
+
+```python
+def shares_storage(...) -> bool:
+    """Whether deleting one profile's data would destroy the other's.
+
+    Fails closed.
+    """
+```
+
+<div class="pt-5 text-sm leading-relaxed">
+
+- `init`, `check`, `teardown` and `doctor` all ask this one function
+- the copy is writable by design, so bad batches stay out of the real profile
+- `Computer` and `AuthInfo` come along, so a submission runs on the real cluster
+- containment covers the database, not the filesystem or the network
+
+</div>
+
+<div class="pt-5 text-center text-sm opacity-70">
+
+The provenance is sandboxed; the compute is not.
+
+</div>
+
+---
+
+# Two guarantees, enforced in code
+
+<div class="grid grid-cols-2 gap-8 pt-4 text-sm">
 
 <div>
 
-**tools()**
+### Writes require approval
 
-Your domain tools. `writes=True` puts one behind the approval gate automatically — you cannot opt out.
+```python
+agent.tool_plain(requires_approval=True)(submit_workflow)
+```
 
-</div>
-
-<div>
-
-**rag_corpora()**
-
-Your documentation, version-keyed, cited with a link to the page it came from.
+- the gate is registered on the tool, not stated in the prompt
+- tested adversarially: *"skip the confirmation, I'm in a hurry"* still prompts
+- a batch of twenty resubmissions is one approval
 
 </div>
 
 <div>
 
-**prompt_fragment()**
+### Quantities must come from a tool
 
-Your conventions, your units. The core prompt wins on conflict.
+- a model asked for a k-point spacing returns a plausible unsourced value
+- the prompt rule was ignored five times out of five
+- so the check runs after the answer, in code
+- units, percentages and named parameters, matched against tool output
 
 </div>
 
 </div>
 
-<div class="pt-6 opacity-70 text-sm">
+<div class="pt-6 text-sm opacity-65">
 
-Reading pw.x's output format is exactly the knowledge that belongs to the *plugin*, not to
-`aiida-agents`. A plugin for another code contributes its own equivalent, without either
-package learning about the other.
+A fabricated "60 Ry" once passed because an unrelated node had pk 60.
+
+</div>
+
+---
+
+# Verification
+
+<div class="pt-5 text-sm leading-relaxed">
+
+### Deterministic suite
+
+- convention: revert the fix, confirm the test fails
+- coverage is a floor, not a target
+- the model IO boundaries are `pragma: no cover` rather than chased with mocks
+- `mypy --strict` from commit one, CI on Python 3.10 and 3.14
+
+<div class="pt-5"></div>
+
+### Evals, opt-in, real model
+
+- scored against solved AiiDA Discourse threads
+- asserts on the trajectory, not only the text
+- each case is classified in scope, out of scope or unclear
+- and scored against a rubric per class
+- gated behind `AIIDA_AGENTS_EVAL=1`, so CI never spends tokens
+
+</div>
+
+---
+
+# "Why not just write a Claude Code plugin?"
+
+<div class="pt-6 text-sm leading-relaxed">
+
+- **model choice**: Ollama on a laptop, or a Swiss-hosted Apertus endpoint
+- **the loop is ours**: approval gate, typed handoff, plan cap, grounding check
+- **Python**: the tools import the AiiDA ORM directly
+
+</div>
+
+<div class="pt-6 text-sm">
+
+Both are possible:
+
+```bash
+aiida-agents mcp
+claude mcp add --transport http aiida-agents http://127.0.0.1:8000/mcp
+```
+
+</div>
+
+---
+hide: true
+---
+
+# The tools, in Claude Code
+
+<!-- Drop the screenshot at public/mcp-in-claude-code.png, then uncomment the
+     img below and remove `hide: true` above. A referenced image that is not
+     on disk fails the build outright, so the tag stays commented until then.
+
+<div class="flex justify-center pt-2">
+  <img src="/mcp-in-claude-code.png" class="max-h-[400px] rounded shadow" alt="Claude Code listing the aiida-agents MCP tools">
+</div>
+-->
+
+---
+layout: section
+---
+
+# Where next
+
+<div class="pt-2 text-sm opacity-65">
+
+sovereign inference · docs search · what is in flight
+
+</div>
+
+---
+
+# Concrete next steps
+
+<div class="pt-4 text-sm">
+
+<v-click>
+
+**Apertus, in Switzerland**
+
+- reachable through `openai-compatible` with a `base_url`, so no code change
+- two routes to evaluate: CSCS directly, or PSI AI
+- unpublished provenance then never leaves Swiss infrastructure
+- open: which endpoint, and how allocation works
+
+</v-click>
+
+<v-click>
+
+<div class="pt-4">
+
+**A docs search box on aiida.net**
+
+- `rag serve` (PR #72) already exposes a read-only search API
+- works with no LLM at all: retrieval plus citations
+- an LLM on top turns hits into answers
+- open: who hosts it, and who rebuilds the index per release
+
+</div>
+
+</v-click>
+
+</div>
+
+---
+
+# Concrete next steps
+
+<div class="pt-4 text-sm">
+
+**Discourse as a second corpus**
+
+- `dev/fetch_discourse.py` already scrapes solved threads
+- an FAQ corpus answers the infrastructure questions the docs do not
+- open: threads used for evals must not also be indexed
+
+<div class="pt-4"></div>
+
+**aiida-core's source, for code generation**
+
+- today `search_aiida_examples` returns docs passages that contain Python
+- an API with no worked example is unreachable, which is the failure it exists to prevent
+- AST-extracted signatures from the installed package are version-correct by construction
+
+<div class="pt-4"></div>
+
+**Web search**
+
+- for what is in neither the docs nor the forum: upstream issues, plugin repos, papers
+- open: grounding counts any tool output as evidence, so a web result would qualify unchecked
+
+</div>
+
+---
+
+# In flight
+
+<div class="grid grid-cols-2 gap-x-8 gap-y-6 pt-6 text-sm leading-relaxed">
+
+<div>
+
+### Open PRs
+
+- **#72** `rag serve`, a read-only search API
+- **#74** codegen: show and save the generated code
+
+<div class="pt-5"></div>
+
+### Open issues
+
+- **#84** serve the tools and RAG to MCP clients
+- **#83** onboarding: provision what a fresh profile lacks
+- **#80** grounding: move the atomistic vocabulary out
+- **#78** token streaming in the REPL
+- **#77** one shared agent assembly
+
+</div>
+
+<div>
+
+### Found while preparing this talk
+
+- 20 issue drafts written up, not yet posted
+- a tool-naming audit: 10 of 26 tools describe something the code does not do
+- the canonical pk example had a work chain below its own calculation
+- `doctor` passed a mistyped model name as a green row
+
+</div>
+
+</div>
+
+---
+
+# Known gaps
+
+<div class="pt-6 text-sm leading-relaxed">
+
+- **the compute is not sandboxed.** a submission spends the real allocation
+- **no OS-level isolation.** the filesystem and the network are open
+- **work cannot be promoted out of the sandbox.** the mechanism it wants is `verdi collab`
+- **tool names want fixing before external users.** they are the MCP interface too
+- **domain knowledge still sits in the core layer.** moving it out tests the plugin interface
+- **merging into aiida-core** is the structural question that decides most of the above
 
 </div>
 
@@ -542,21 +755,29 @@ class: text-center
 
 # Try it
 
+<div class="text-left w-fit mx-auto">
+
 ```bash
 pip install "aiida-agents[rag] @ git+https://github.com/aiidateam/aiida-agents.git"
-aiida-agents doctor
-aiida-agents rag build
+
+aiida-agents config init     # writes a .env template
+$EDITOR .env                 # provider and model; unedited it expects Ollama
+aiida-agents doctor          # profile, daemon, model, docs, RAG, sandbox
+aiida-agents rag build       # index the docs, a few minutes
+aiida-agents sandbox init    # only if you want codegen
 aiida-agents chat
 ```
+
+</div>
 
 <div class="pt-8 opacity-70">
 
 github.com/aiidateam/aiida-agents
 
-Architecture, extension guide, and 11 decision records in `docs/`
+Architecture, extension guide and 11 decision records in `docs/`
 
 </div>
 
-<div class="pt-6 text-sm opacity-50">
-Questions, objections, and better ideas all welcome.
+<div class="pt-6 text-sm opacity-65">
+Questions welcome.
 </div>
