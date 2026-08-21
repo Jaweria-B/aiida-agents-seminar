@@ -11,7 +11,7 @@ transition: fade
 A natural-language, multi-agent interface to AiiDA
 
 <div class="pt-8 opacity-70">
-Jaweria Batool · GSoC 2026 · MSD group seminar, 21 Aug 2026
+Jaweria Batool · GSoC 2026
 </div>
 
 ---
@@ -44,69 +44,61 @@ src/aiida_agents/
 
 # What it can do
 
-<div class="text-sm opacity-70">
+<div class="grid grid-cols-3 gap-x-8 gap-y-10 pt-6 text-sm">
 
-Monospace names are the tool functions the model calls.
+<div class="border-l-2 border-gray-300 pl-4">
 
-</div>
+### Explore
 
-<div class="grid grid-cols-3 gap-x-6 gap-y-10 pt-4 text-xs">
-
-<div class="border-l-2 border-gray-300 pl-3">
-
-### Explore the database
-
-- `query_nodes`: filters, AND/OR, joins, sorting, group scoping
-- `get_node_inputs` / `get_node_outputs`: walk provenance
-- `search_structures`, `query_run_context`
+What is in my database, and how is it connected?
 
 </div>
 
-<div class="border-l-2 border-gray-300 pl-3">
+<div class="border-l-2 border-gray-300 pl-4">
 
-### Inspect a process
+### Inspect
 
-- `get_process_status`, `get_process_report`
-- `list_retrieved_files`, `get_retrieved_file`
+What happened in this run, and what came back?
 
 </div>
 
-<div class="border-l-2 border-gray-300 pl-3">
+<div class="border-l-2 border-gray-300 pl-4">
 
 ### Diagnose
 
-- `diagnose_process_failure`: exit code, failing sub-process, handlers fired
-- `get_daemon_status`: whether anything is draining the queue
+Why did it fail, and had anything already tried to fix it?
 
 </div>
 
-<div class="border-l-2 border-gray-300 pl-3">
+<div class="border-l-2 border-gray-300 pl-4">
 
-### Look things up
+### Look up
 
-- `search_aiida_docs`, `search_aiida_code`
-- retrieved from the indexed docs, cited
-
-</div>
-
-<div class="border-l-2 border-gray-300 pl-3">
-
-### Build inputs
-
-- `list_workflows`, `list_codes`, `describe_workflow`
-- `build_workflow_inputs` (protocol builder)
-- `draft_workflow_inputs` (declared ports)
+What do the docs say about this?
 
 </div>
 
-<div class="border-l-2 border-gray-300 pl-3">
+<div class="border-l-2 border-gray-300 pl-4">
 
-### Submit and run code
+### Set up
 
-- gated: `execute_workflow_spec`, `execute_workflow_batch`, `import_structure`
-- `run_aiida_code`, against the sandbox copy
+Which workflow, which inputs, which code?
 
 </div>
+
+<div class="border-l-2 border-gray-300 pl-4">
+
+### Run
+
+Submit it, or write the Python that answers it.
+
+</div>
+
+</div>
+
+<div class="pt-10 text-center text-sm opacity-70">
+
+Twenty-six typed tools underneath. The model picks; the code validates.
 
 </div>
 
@@ -172,12 +164,11 @@ One prefix, `AIIDA_AGENTS_*`, read from the environment or a `.env`, validated a
 ```bash
 aiida-agents config show     # every value, and where it came from
 aiida-agents doctor          # profile, daemon, model, docs, RAG, sandbox
-aiida-agents doctor --warm   # ... and check the model actually serves
 aiida-agents rag build       # index the docs
 aiida-agents sandbox init    # make the disposable copy
 ```
 
-<div class="pt-4 text-sm">
+<div class="pt-6 text-sm">
 
 - `doctor` names the fix for every failure it reports
 - a lookup that finds nothing raises, rather than substituting a default
@@ -276,17 +267,148 @@ a two-step plan · codegen against the sandbox
 layout: section
 ---
 
-# Components
+# What it does
 
 <div class="pt-2 text-sm opacity-65">
 
-RAG · MCP · plugins
+one capability at a time
 
 </div>
 
 ---
 
-# RAG over the AiiDA docs
+# Ask about your data
+
+<div class="pt-4 text-xl">
+
+*"How many silicon structures do I have, and which ones came from a relaxation?"*
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- counts, filters, sorting, and joins across the provenance graph
+- walks links in both directions: what went in, what came out
+- searches structures by formula or element
+- summarises what past runs actually used
+
+</div>
+
+<div class="pt-8 text-sm opacity-70">
+
+The query is built and validated in code. The model chooses what to ask, never how to ask it.
+
+</div>
+
+---
+
+# Diagnose a failure
+
+<div class="pt-4 text-xl">
+
+*"Why did pk 334407 fail?"*
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- walks from the work chain **down to the calculation that actually broke**
+- reads what the exit code means from the process class itself
+- names which restart handlers fired, and which ones matched
+- points at the file the code wrote when it gave up
+
+</div>
+
+<div class="pt-8 text-sm opacity-70">
+
+The one case where a stopped daemon looks identical to a healthy queue — so it checks, and says which.
+
+</div>
+
+---
+
+# Set up a run
+
+<div class="pt-4 text-xl">
+
+*"Set up a band structure calculation on this silicon."*
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- discovers which workflows and codes this profile actually has
+- reads a workflow's real input schema, not a remembered one
+- fills inputs from a protocol builder where one exists
+- drafts them from the declared ports where one does not
+
+</div>
+
+<div class="pt-8 text-sm opacity-70">
+
+It also checks the cutoffs against the pseudopotentials before you see them.
+
+</div>
+
+---
+
+# Submit, and re-run
+
+<div class="pt-4 text-xl">
+
+*"Run that again with a higher cutoff."*
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- rebuilds a past run's inputs, changes one thing, resubmits
+- feeds one submission's output into the next
+- a batch of twenty is **one approval**, listing every member
+- follows up on what it started
+
+</div>
+
+<div class="pt-8 text-sm opacity-70">
+
+Every one of these pauses and asks first.
+
+</div>
+
+---
+
+# Write and run code
+
+<div class="pt-4 text-xl">
+
+*"What's the average number of atoms across all my structures?"*
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- for questions no fixed tool expresses
+- writes Python, **runs it**, and reports what came back
+- reads its own traceback and tries again
+- runs against a disposable copy, never the real profile
+
+</div>
+
+<div class="pt-8 text-sm opacity-70">
+
+Showing you code that has run beats showing you code that should work.
+
+</div>
+
+---
+
+# Search the documentation
+
+<div class="pt-4 text-xl">
+
+*"How do I restart a work chain from a previous calculation?"*
+
+</div>
 
 ```bash
 aiida-agents rag build
@@ -295,16 +417,16 @@ aiida-agents rag search "restart a workchain"
 
 <div class="pt-6 text-sm leading-relaxed">
 
-- ChromaDB, `mxbai-embed-large` via Ollama, sentence-transformers fallback for CI
-- collections keyed by docs version, corpus format and embedder
-- so a query can never hit an index built by a different one
-- plugins ship their own corpora, keyed the same way
+- the AiiDA docs, chunked, embedded and searchable locally
+- every answer cites the page it came from
+- indexes are keyed by docs version, so a query cannot hit a stale one
+- if the index has nothing, it says so instead of answering from memory
 
 </div>
 
 ---
 
-# MCP server
+# The MCP server
 
 ```bash
 aiida-agents mcp    # streamable-http, :8000
@@ -315,63 +437,60 @@ claude mcp add --transport http \
 
 <div class="pt-6 text-sm leading-relaxed">
 
-20 read-only tools, the same ones the agents call.
+Twenty read-only tools, the same ones the agents call.
 
-- no write tools: a generic client has no approval gate
-- no codegen: its safety rests on a verified sandbox profile, which a client cannot check
+- **no write tools**: a generic client has no approval gate
+- **no codegen**: its safety rests on a sandbox profile a client cannot verify
+
+</div>
+
+<div class="pt-6 text-sm opacity-70">
+
+One tool layer, two front-ends.
 
 </div>
 
 ---
 
-# Extending it
+# Plugins
 
-<div class="pb-2 text-sm">
+<div class="pt-4 text-lg">
 
-Plugins are found through an entry point, so `aiida-agents` never imports or depends on yours.
-
-</div>
-
-```toml
-[project.entry-points."aiida_agents.plugins"]
-quantumespresso = "my_plugin.agents:PROVIDER"
-```
-
-<div class="grid grid-cols-3 gap-6 pt-6 text-sm">
-
-<div class="border-l-2 border-gray-300 pl-3">
-
-**`tools()`**
-
-Your domain tools.
-
-`writes=True` registers it behind the approval gate.
+A domain package adds its own tools, docs and conventions — without either package importing the other.
 
 </div>
 
-<div class="border-l-2 border-gray-300 pl-3">
+<div class="grid grid-cols-3 gap-8 pt-10 text-sm">
 
-**`rag_corpora()`**
+<div class="border-l-2 border-gray-300 pl-4">
 
-Your docs, version-keyed, cited with a link.
+**Tools**
+
+Your own, automatically gated if they write.
 
 </div>
 
-<div class="border-l-2 border-gray-300 pl-3">
+<div class="border-l-2 border-gray-300 pl-4">
 
-**`prompt_fragment()`**
+**Docs**
+
+Your documentation, cited like ours.
+
+</div>
+
+<div class="border-l-2 border-gray-300 pl-4">
+
+**Prompt**
 
 Your conventions and units.
 
-The core prompt wins on conflict.
-
 </div>
 
 </div>
 
-<div class="pt-8 opacity-70 text-sm">
+<div class="pt-10 text-sm opacity-70">
 
-Parsing pw.x output belongs to `aiida-quantumespresso`.
+Reading pw.x output is knowledge that belongs to `aiida-quantumespresso`, not here.
 
 </div>
 
@@ -400,11 +519,11 @@ Parsing pw.x output belongs to `aiida-quantumespresso`.
 layout: section
 ---
 
-# Architecture
+# The agents
 
 <div class="pt-2 text-sm opacity-65">
 
-request path · what the model decides · specialists
+request path · what the model decides · the three specialists
 
 </div>
 
@@ -480,6 +599,128 @@ A new specialist needs its own tool surface and its own prompt.
 </div>
 
 ---
+
+# Analysis
+
+<div class="pt-4 text-lg opacity-80">
+
+Understands what is already there.
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- fourteen read-only tools, and **no write tool at all**
+- the provenance graph, process reports, retrieved files, the daemon
+- the documentation, with citations
+
+</div>
+
+<div class="pt-10 text-sm opacity-70">
+
+It cannot change anything, and that is a property of its tool list rather than its instructions.
+
+</div>
+
+---
+
+# Execution
+
+<div class="pt-4 text-lg opacity-80">
+
+Sets things up, and asks before doing them.
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- discovers workflows and codes, reads their real input schemas
+- builds inputs from a protocol, or drafts them from declared ports
+- three tools can write, and **all three stop and ask**
+
+</div>
+
+<div class="pt-10 text-sm opacity-70">
+
+Submitting, importing a structure, and running a batch. Nothing else touches the database.
+
+</div>
+
+---
+
+# Codegen
+
+<div class="pt-4 text-lg opacity-80">
+
+Answers what no fixed tool expresses.
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+- looks up worked examples before writing anything
+- runs the snippet, reads the traceback, tries again
+- reports the output, not the intention
+
+</div>
+
+<div class="pt-10 text-sm opacity-70">
+
+It runs against a copy of your storage, so the worst case is a wrong answer rather than a lost database.
+
+</div>
+
+---
+
+# One question, three steps
+
+<div class="pt-4 text-xl">
+
+*"Find out why pk 334407 failed, then resubmit it with the fix."*
+
+</div>
+
+<div class="pt-8 text-sm leading-relaxed">
+
+<v-click>
+
+**1 · Planner** — two steps: diagnose, then resubmit. It holds no tools, so this costs one call and touches nothing.
+
+</v-click>
+
+<v-click>
+
+<div class="pt-4">
+
+**2 · Analysis** — walks to the calculation that broke, reads the exit code, names the handler that already fired.
+
+</div>
+
+</v-click>
+
+<v-click>
+
+<div class="pt-4">
+
+**3 · Execution** — rebuilds the inputs with that finding, shows them resolved, and waits for you.
+
+</div>
+
+</v-click>
+
+<v-click>
+
+<div class="pt-6 opacity-70">
+
+If step 2 finds nothing, step 3 never runs. A resubmission built on a diagnosis that failed is worse than none.
+
+</div>
+
+</v-click>
+
+</div>
+
+---
 layout: section
 ---
 
@@ -487,7 +728,7 @@ layout: section
 
 <div class="pt-2 text-sm opacity-65">
 
-sandbox · approval gate · grounding check
+the sandbox · the approval gate
 
 </div>
 
@@ -520,105 +761,26 @@ The provenance is sandboxed; the compute is not.
 
 ---
 
-# Two guarantees, enforced in code
-
-<div class="grid grid-cols-2 gap-8 pt-4 text-sm">
-
-<div>
-
-### Writes require approval
+# Writes require approval
 
 ```python
 agent.tool_plain(requires_approval=True)(submit_workflow)
 ```
 
-- the gate is registered on the tool, not stated in the prompt
-- tested adversarially: *"skip the confirmation, I'm in a hurry"* still prompts
-- a batch of twenty resubmissions is one approval
-
-</div>
-
-<div>
-
-### Quantities must come from a tool
-
-- a model asked for a k-point spacing returns a plausible unsourced value
-- the prompt rule was ignored five times out of five
-- so the check runs after the answer, in code
-- units, percentages and named parameters, matched against tool output
-
-</div>
-
-</div>
-
-<div class="pt-6 text-sm opacity-65">
-
-A fabricated "60 Ry" once passed because an unrelated node had pk 60.
-
-</div>
-
----
-
-# Verification
-
-<div class="pt-5 text-sm leading-relaxed">
-
-### Deterministic suite
-
-- convention: revert the fix, confirm the test fails
-- coverage is a floor, not a target
-- the model IO boundaries are `pragma: no cover` rather than chased with mocks
-- `mypy --strict` from commit one, CI on Python 3.10 and 3.14
-
-<div class="pt-5"></div>
-
-### Evals, opt-in, real model
-
-- scored against solved AiiDA Discourse threads
-- asserts on the trajectory, not only the text
-- each case is classified in scope, out of scope or unclear
-- and scored against a rubric per class
-- gated behind `AIIDA_AGENTS_EVAL=1`, so CI never spends tokens
-
-</div>
-
----
-
-# "Why not just write a Claude Code plugin?"
-
 <div class="pt-6 text-sm leading-relaxed">
 
-- **model choice**: Ollama on a laptop, or a Swiss-hosted Apertus endpoint
-- **the loop is ours**: approval gate, typed handoff, plan cap, grounding check
-- **Python**: the tools import the AiiDA ORM directly
+- the gate is registered **on the tool**, not stated in the prompt
+- so no wording can talk it out of asking
+- tested adversarially: *"skip the confirmation, I'm in a hurry"* still prompts
+- a batch of twenty resubmissions is one approval, listing every member
 
 </div>
 
-<div class="pt-6 text-sm">
+<div class="pt-8 text-sm opacity-70">
 
-Both are possible:
-
-```bash
-aiida-agents mcp
-claude mcp add --transport http aiida-agents http://127.0.0.1:8000/mcp
-```
+Backed by ~1k tests, and evals scored against solved AiiDA forum threads.
 
 </div>
-
----
-hide: true
----
-
-# The tools, in Claude Code
-
-<!-- Drop the screenshot at public/mcp-in-claude-code.png, then uncomment the
-     img below and remove `hide: true` above. A referenced image that is not
-     on disk fails the build outright, so the tag stays commented until then.
-
-<div class="flex justify-center pt-2">
-  <img src="/mcp-in-claude-code.png" class="max-h-[400px] rounded shadow" alt="Claude Code listing the aiida-agents MCP tools">
-</div>
--->
 
 ---
 layout: section
@@ -634,9 +796,9 @@ sovereign inference · docs search · what is in flight
 
 ---
 
-# Concrete next steps
+# Running it in Switzerland
 
-<div class="pt-4 text-sm">
+<div class="pt-6 text-sm">
 
 <v-click>
 
@@ -651,7 +813,7 @@ sovereign inference · docs search · what is in flight
 
 <v-click>
 
-<div class="pt-4">
+<div class="pt-6">
 
 **A docs search box on aiida.net**
 
@@ -668,7 +830,7 @@ sovereign inference · docs search · what is in flight
 
 ---
 
-# Concrete next steps
+# More to retrieve from
 
 <div class="pt-4 text-sm">
 
@@ -676,22 +838,20 @@ sovereign inference · docs search · what is in flight
 
 - `dev/fetch_discourse.py` already scrapes solved threads
 - an FAQ corpus answers the infrastructure questions the docs do not
-- open: threads used for evals must not also be indexed
 
 <div class="pt-4"></div>
 
 **aiida-core's source, for code generation**
 
-- today `search_aiida_examples` returns docs passages that contain Python
-- an API with no worked example is unreachable, which is the failure it exists to prevent
-- AST-extracted signatures from the installed package are version-correct by construction
+- an API with no worked example is unreachable to codegen today
+- AST-extracted signatures are version-correct by construction
 
 <div class="pt-4"></div>
 
 **Web search**
 
-- for what is in neither the docs nor the forum: upstream issues, plugin repos, papers
-- open: grounding counts any tool output as evidence, so a web result would qualify unchecked
+- for what is in neither the docs nor the forum
+- open: grounding treats any tool output as evidence, so a web result would qualify unchecked
 
 </div>
 
@@ -780,4 +940,52 @@ Architecture, extension guide and 11 decision records in `docs/`
 
 <div class="pt-6 text-sm opacity-65">
 Questions welcome.
+</div>
+
+---
+hide: true
+---
+
+# "Why not just write a Claude Code plugin?"
+
+<div class="pt-6 text-sm leading-relaxed">
+
+- **model choice**: Ollama on a laptop, or a Swiss-hosted Apertus endpoint
+- **the loop is ours**: approval gate, typed handoff, plan cap, grounding check
+- **Python**: the tools import the AiiDA ORM directly
+
+</div>
+
+<div class="pt-6 text-sm">
+
+Both are possible:
+
+```bash
+aiida-agents mcp
+claude mcp add --transport http aiida-agents http://127.0.0.1:8000/mcp
+```
+
+</div>
+
+---
+hide: true
+---
+
+# How we know it works
+
+<div class="pt-6 text-sm leading-relaxed">
+
+### Deterministic suite
+
+- ~1k tests, `mypy --strict` from commit one, CI on Python 3.10 to 3.14
+- convention: revert the fix, confirm the test fails
+
+<div class="pt-5"></div>
+
+### Evals, opt-in, real model
+
+- scored against solved AiiDA Discourse threads
+- asserts on what the agent *did*, not only what it said
+- gated behind `AIIDA_AGENTS_EVAL=1`, so CI never spends tokens
+
 </div>

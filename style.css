@@ -41,3 +41,32 @@
 .slidev-layout h1 {
   color: #3f5c68;
 }
+
+/* Tie the `border-l-2 border-gray-300` accent dividers (What it can do,
+ * Plugins) to the deck's own palette instead of a generic gray, and give
+ * their lead-in heading the same colour as h1/h2. */
+.slidev-layout .border-gray-300 {
+  border-color: #b9cad0;
+}
+
+.slidev-layout .border-gray-300 h3,
+.slidev-layout .border-gray-300 strong:first-child {
+  color: #3f5c68;
+}
+
+/* Tables (Configuration, Model providers, The stack, Three specialists):
+ * an accent-coloured header rule instead of the theme's plain black one. */
+.slidev-layout table thead tr {
+  border-bottom: 2px solid #5d8392;
+}
+
+.slidev-layout table th {
+  color: #3f5c68;
+}
+
+/* Fenced code blocks get the same accent used for inline code and h1, so
+ * a bash/python/text block reads as part of the same system rather than
+ * a plain Shiki default. */
+.slidev-layout pre {
+  border-left: 3px solid #5d8392;
+}
